@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지도 디버깅 - 편의점 행사상품 모음</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .debug-info {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        #map {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+        }
+        
+        .test-button {
+            margin: 5px;
+            padding: 8px 15px;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        
+        .status.success { background-color: #d4edda; color: #155724; }
+        .status.error { background-color: #f8d7da; color: #721c24; }
+        .status.warning { background-color: #fff3cd; color: #856404; }
+        .status.info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>🔧 지도 디버깅 페이지</h1>
+        
+        <!-- 상태 표시 -->
+        <div id="status-container"></div>
+        
+        <!-- 테스트 버튼들 -->
+        <div class="mb-3">
+            <button onclick="testKakaoAPI()" class="btn btn-primary test-button">1. Kakao API 테스트</button>
+            <button onclick="testMapContainer()" class="btn btn-secondary test-button">2. 지도 컨테이너 테스트</button>
+            <button onclick="testMapInit()" class="btn btn-success test-button">3. 지도 초기화 테스트</button>
+            <button onclick="testGeocoder()" class="btn btn-warning test-button">4. 지오코더 테스트</button>
+            <button onclick="clearLogs()" class="btn btn-danger test-button">로그 초기화</button>
+        </div>
+        
+        <!-- 지도 컨테이너 -->
+        <div id="map"></div>
+        
+        <!-- 디버그 정보 -->
+        <div class="debug-info mt-3">
+            <h5>🐛 디버그 로그:</h5>
+            <div id="debug-log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- 카카오맵 API 로드 -->
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b285181ca1075385cd0fed595ae04444&libraries=services"></script>
+    
+    <script>
+        let map;
+        let geocoder;
+        
+        // 로그 출력 함수
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logContainer = document.getElementById('debug-log');
+            const statusContainer = document.getElementById('status-container');
+            
+            // 디버그 로그에 추가
+            logContainer.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // 상태 표시
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            statusContainer.appendChild(statusDiv);
+            
+            // 콘솔에도 출력
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        // 로그 초기화
+        function clearLogs() {
+            document.getElementById('debug-log').innerHTML = '';
+            document.getElementById('status-container').innerHTML = '';
+            console.clear();
+            addLog('로그가 초기화되었습니다.', 'info');
+        }
+        
+        // 1. Kakao API 테스트
+        function testKakaoAPI() {
+            addLog('=== Kakao API 테스트 시작 ===', 'info');
+            
+            if (typeof kakao === 'undefined') {
+                addLog('❌ Kakao 객체가 로드되지 않았습니다!', 'error');
+                return false;
+            }
+            addLog('✅ Kakao 객체 로드됨', 'success');
+            
+            if (typeof kakao.maps === 'undefined') {
+                addLog('❌ kakao.maps가 로드되지 않았습니다!', 'error');
+                return false;
+            }
+            addLog('✅ kakao.maps 로드됨', 'success');
+            
+            if (typeof kakao.maps.services === 'undefined') {
+                addLog('❌ kakao.maps.services가 로드되지 않았습니다!', 'error');
+                return false;
+            }
+            addLog('✅ kakao.maps.services 로드됨', 'success');
+            
+            addLog('🎉 Kakao API 모든 테스트 통과!', 'success');
+            return true;
+        }
+        
+        // 2. 지도 컨테이너 테스트
+        function testMapContainer() {
+            addLog('=== 지도 컨테이너 테스트 시작 ===', 'info');
+            
+            const container = document.getElementById('map');
+            if (!container) {
+                addLog('❌ 지도 컨테이너(#map)를 찾을 수 없습니다!', 'error');
+                return false;
+            }
+            addLog('✅ 지도 컨테이너 찾음', 'success');
+            
+            const rect = container.getBoundingClientRect();
+            addLog(`📏 컨테이너 크기: ${rect.width}x${rect.height}`, 'info');
+            
+            if (rect.width === 0 || rect.height === 0) {
+                addLog('❌ 지도 컨테이너 크기가 0입니다!', 'error');
+                return false;
+            }
+            addLog('✅ 지도 컨테이너 크기 정상', 'success');
+            
+            return true;
+        }
+        
+        // 3. 지도 초기화 테스트
+        function testMapInit() {
+            addLog('=== 지도 초기화 테스트 시작 ===', 'info');
+            
+            if (!testKakaoAPI() || !testMapContainer()) {
+                addLog('❌ 선행 테스트 실패로 지도 초기화 중단', 'error');
+                return false;
+            }
+            
+            try {
+                const container = document.getElementById('map');
+                const options = {
+                    center: new kakao.maps.LatLng(37.566826, 126.9786567),
+                    level: 5
+                };
+                
+                addLog('🔄 지도 객체 생성 중...', 'warning');
+                map = new kakao.maps.Map(container, options);
+                addLog('✅ 지도 객체 생성 성공!', 'success');
+                
+                // 지도 로드 완료 이벤트
+                kakao.maps.event.addListener(map, 'tilesloaded', function() {
+                    addLog('✅ 지도 타일 로딩 완료!', 'success');
+                });
+                
+                return true;
+            } catch (error) {
+                addLog(`❌ 지도 초기화 실패: ${error.message}`, 'error');
+                console.error('지도 초기화 오류:', error);
+                return false;
+            }
+        }
+        
+        // 4. 지오코더 테스트
+        function testGeocoder() {
+            addLog('=== 지오코더 테스트 시작 ===', 'info');
+            
+            if (!map) {
+                addLog('❌ 지도가 초기화되지 않음. 먼저 지도 초기화 테스트를 실행하세요.', 'error');
+                return false;
+            }
+            
+            try {
+                geocoder = new kakao.maps.services.Geocoder();
+                addLog('✅ 지오코더 생성 성공', 'success');
+                
+                // 테스트 주소 검색
+                addLog('🔄 테스트 주소 검색 중... (서울시청)', 'warning');
+                geocoder.addressSearch('서울시청', function(result, status) {
+                    if (status === kakao.maps.services.Status.OK) {
+                        addLog('✅ 주소 검색 성공!', 'success');
+                        addLog(`📍 검색 결과: ${result[0].address_name}`, 'info');
+                        
+                        // 지도 중심 이동
+                        const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+                        map.setCenter(coords);
+                        
+                        // 마커 추가
+                        const marker = new kakao.maps.Marker({
+                            position: coords,
+                            map: map
+                        });
+                        
+                        addLog('✅ 지도 중심 이동 및 마커 추가 완료', 'success');
+                    } else {
+                        addLog(`❌ 주소 검색 실패: ${status}`, 'error');
+                    }
+                });
+                
+                return true;
+            } catch (error) {
+                addLog(`❌ 지오코더 생성 실패: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // 페이지 로드 시 자동 테스트
+        window.onload = function() {
+            addLog('🚀 페이지 로드 완료 - 자동 테스트 시작', 'info');
+            
+            // 1초 후 자동 테스트 실행
+            setTimeout(() => {
+                addLog('🔄 자동 테스트 실행 중...', 'warning');
+                
+                if (testKakaoAPI()) {
+                    setTimeout(() => {
+                        if (testMapContainer()) {
+                            setTimeout(() => {
+                                testMapInit();
+                            }, 500);
+                        }
+                    }, 500);
+                }
+            }, 1000);
+        };
+        
+        // 에러 캐치
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            addLog(`❌ JavaScript 오류: ${msg} (Line: ${lineNo})`, 'error');
+            return false;
+        };
+    </script>
+</body>
+</html>
