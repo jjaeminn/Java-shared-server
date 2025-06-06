@@ -17,25 +17,25 @@ def after_request(response):
 # 데이터베이스 연결 정보
 DB_CONFIGS = {
     'gs25': {
-        'host': 'localhost',
+        'host': 'mysql',
         'user': 'root',
         'password': '2741',
         'database': 'gs25_db'
     },
     'cu': {
-        'host': 'localhost',
+        'host': 'mysql',
         'user': 'root',
         'password': '2741',
         'database': 'cu_db'
     },
     'emart24': {
-        'host': 'localhost',
+        'host': 'mysql',
         'user': 'root',
         'password': '2741',
         'database': 'emart24_db'
     },
     'seven': {
-        'host': 'localhost',
+        'host': 'mysql',
         'user': 'root',
         'password': '2741',
         'database': 'seven_db'
@@ -771,4 +771,4 @@ if __name__ == '__main__':
     if not os.path.exists('templates'):
         os.makedirs('templates')
     
-    app.run(debug=True)
+    app.run(host='0.0.0.', port=5000, debug=True)
