@@ -1,1 +1,1 @@
-# Java-shared-server
+# 자바 응용 프로그램 팀 프로젝트
